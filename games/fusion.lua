@@ -90,7 +90,7 @@ Exploits:add_label("Movement")
 local AntiJam = Exploits:add_checkbox("Anti Jam", false)
 local NoJumpCD = Exploits:add_checkbox("No Jump Cooldown", false)
 local InfiniteJump = Exploits:add_checkbox("Infinite Jump", false)
-local JumpHeight = Exploits:add_slider("Jump Height", 10, 120, 30)
+local JumpHeight = Exploits:add_slider("Jump Height", 10, 85, 50)
 
 local Misc = gui.create("Misc | fusion.lua", false)
 Misc:set_size(150, 240)
@@ -148,7 +148,7 @@ local Elements = {
     {"Player | fusion.lua", "Anti Jam", false},
     {"Player | fusion.lua", "No Jump Cooldown", false},
     {"Player | fusion.lua", "Infinite Jump", false},
-    {"Player | fusion.lua", "Jump Height", 30},
+    {"Player | fusion.lua", "Jump Height", 50},
 }
 
 local LocalPlayer = nil
