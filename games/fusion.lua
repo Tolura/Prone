@@ -90,7 +90,7 @@ Exploits:add_label("Movement")
 local AntiJam = Exploits:add_checkbox("Anti Jam", false)
 local NoJumpCD = Exploits:add_checkbox("No Jump Cooldown", false)
 local InfiniteJump = Exploits:add_checkbox("Infinite Jump", false)
-local JumpHeight = Exploits:add_slider("Jump Height", 10, 85, 50)
+local JumpHeight = Exploits:add_slider("Jump Height", 0, 35, 15)
 
 local Misc = gui.create("Misc | fusion.lua", false)
 Misc:set_size(150, 240)
@@ -148,7 +148,7 @@ local Elements = {
     {"Player | fusion.lua", "Anti Jam", false},
     {"Player | fusion.lua", "No Jump Cooldown", false},
     {"Player | fusion.lua", "Infinite Jump", false},
-    {"Player | fusion.lua", "Jump Height", 50},
+    {"Player | fusion.lua", "Jump Height", 15},
 }
 
 local LocalPlayer = nil
@@ -167,6 +167,7 @@ local Rush = false
 local WasQB = false
 local AntiJamOn = false
 local Jumping = false
+local JumpState = false
 
 local HeadCache = {}
 local ArmCache = {}
@@ -601,35 +602,33 @@ end)
 
 spawn(function()
     while Fusioning do
-        if (NoJumpCD:get_value() or InfiniteJump:get_value()) and input.key_down(0x20)
-            and LocalPlayer and LocalPlayer:isvalid() then
+        if LocalPlayer and LocalPlayer:isvalid() then
             local Character = LocalPlayer.character
             local CheckChar = Character and Character:isvalid()
             local HRP = CheckChar and Character:find_first_child("HumanoidRootPart")
             local Humanoid = CheckChar and Character:find_first_child_class("Humanoid")
             if HRP and HRP:isvalid() and Humanoid and Humanoid:isvalid() then
-                local Velocity = HRP.velocity
-                local Height = JumpHeight:get_value()
-                if InfiniteJump:get_value() then
-                    if not Jumping then
-                        HRP:set_velocity(vector3(Velocity.x, Height, Velocity.z))
-                        Jumping = true
-                    end
-                else
-                    local State = Humanoid:get_state()
-                    local Grounded = State == humanoid_state.RUNNING or State == humanoid_state.LANDED
-                    if Grounded and not Jumping then
-                        HRP:set_velocity(vector3(Velocity.x, Height, Velocity.z))
-                        Jumping = true
-                    elseif not Grounded then
-                        Jumping = true
-                    else
-                        Jumping = false
-                    end
+                local State = Humanoid:get_state()
+                local Grounded = State == humanoid_state.RUNNING or State == humanoid_state.LANDED
+                local IsJumping = State == humanoid_state.JUMPING
+                if IsJumping and not JumpState then
+                    wait(10)
+                    local Velocity = HRP.velocity
+                    local Height = JumpHeight:get_value()
+                    HRP:set_velocity(vector3(Velocity.x, Velocity.y + Height, Velocity.z))
+                elseif input.key_down(0x20) and (NoJumpCD:get_value() or InfiniteJump:get_value()) and not Jumping then
+                    local Velocity = HRP.velocity
+                    local Height = JumpHeight:get_value()
+                    HRP:set_velocity(vector3(Velocity.x, Velocity.y + Height, Velocity.z))
+                    Jumping = true
+                elseif Grounded then
+                    Jumping = false
                 end
+                JumpState = IsJumping
             end
         else
             Jumping = false
+            JumpState = false
         end
         wait(8)
     end
