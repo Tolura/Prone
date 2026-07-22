@@ -52,8 +52,16 @@ local Positions = {ESP_TOP, ESP_BOTTOM, ESP_RIGHT, ESP_LEFT}
 local ATMTextSize, RegisterTextSize, BountyTextSize
 
 local function SolveATM(Menus)
+    if not (Menus and Menus:isvalid()) then
+        Positioned, PrevSolved = false, nil
+        return false
+    end
     local Frame = Menus:find_first_child("ATM")
-    local Hacking = Frame and Frame:isvalid() and Frame:find_first_child("Hacking")
+    if not (Frame and Frame:isvalid()) then
+        Positioned, PrevSolved = false, nil
+        return false
+    end
+    local Hacking = Frame:find_first_child("Hacking")
     if not (Hacking and Hacking:isvalid() and Hacking:read_memory(GuiObject_VisibleOffset, MEMORY_BOOL) == true) then
         Positioned, PrevSolved = false, nil
         return false
@@ -61,36 +69,41 @@ local function SolveATM(Menus)
     local Button = Hacking:find_first_child("ClickButton")
     local Cycle = Hacking:find_first_child("CycleFrame")
     local Selecting = Hacking:find_first_child("SelectingCode")
-    if Button and Button:isvalid() and Cycle and Cycle:isvalid() and Selecting and Selecting:isvalid() then
-        if not Positioned then
-            local Position, Size = Button.gui_position, Button.gui_size
-            if Position and Size then
-                input.set_mouse_position(vector2(Position.x + Size.x * 0.5, Position.y + Size.y * 0.5))
-                input.set_mouse_position_rel(vector2(1, 0))
-                Positioned = true
-            end
+    if not (Button and Button:isvalid() and Cycle and Cycle:isvalid() and Selecting and Selecting:isvalid()) then return true end
+    if not Positioned then
+        local Position, Size = Button.gui_position, Button.gui_size
+        if Position and Size then
+            input.set_mouse_position(vector2(Position.x + Size.x * 0.5, Position.y + Size.y * 0.5))
+            input.set_mouse_position_rel(vector2(1, 0))
+            Positioned = true
         end
-        local Target = Selecting:get_label_text()
-        if Target and Target ~= "" then
-            if PrevSolved == Target and (get_tickcount() - PrevSolvedTime) > 1000 then PrevSolved = nil end
-            local Lit
-            for Index = 1, 4 do
-                local List = Cycle:find_first_child("List" .. tostring(Index))
-                if List and List:isvalid() then
-                    for _, Label in pairs(List:get_children()) do
-                        if Label:isvalid() and Label.class_name == "TextLabel" then
-                            local Color = Label:get_label_text_color()
-                            if Color and Color.r == 0 and Color.g == 0 and Color.b == 0 then Lit = Label break end
-                        end
+    end
+    if not Selecting:isvalid() then return true end
+    local Target = Selecting:get_label_text()
+    if not Target or Target == "" then return true end
+    if PrevSolved == Target then
+        if (get_tickcount() - PrevSolvedTime) > 1000 then PrevSolved = nil else return true end
+    end
+    local LitText
+    for Index = 1, 4 do
+        if not Cycle:isvalid() then break end
+        local List = Cycle:find_first_child("List" .. tostring(Index))
+        if List and List:isvalid() then
+            for _, Label in pairs(List:get_children()) do
+                if Label:isvalid() and Label.class_name == "TextLabel" then
+                    local Color = Label:get_label_text_color()
+                    if Color and Color.r == 0 and Color.g == 0 and Color.b == 0 then
+                        if Label:isvalid() then LitText = Label:get_label_text() end
+                        break
                     end
                 end
-                if Lit then break end
-            end
-            if Lit and Lit:get_label_text() == Target and PrevSolved ~= Target then
-                input.simulate_mouse_click(MOUSE1)
-                PrevSolved, PrevSolvedTime = Target, get_tickcount()
             end
         end
+        if LitText then break end
+    end
+    if LitText and LitText == Target and Hacking:isvalid() and Hacking:read_memory(GuiObject_VisibleOffset, MEMORY_BOOL) == true then
+        input.simulate_mouse_click(MOUSE1)
+        PrevSolved, PrevSolvedTime = Target, get_tickcount()
     end
     return true
 end
